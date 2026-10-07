@@ -112,6 +112,27 @@ def estimated_efficiency(bounty: dict[str, Any]) -> tuple[float, str]:
         return round(reward * 1.15, 2), "low effort"
     return round(reward, 2), "standard effort"
 
+def feasibility_check(bounty: dict[str, Any]) -> tuple[str, list[str]]:
+    """Classify whether the current agent appears able to handle the bounty."""
+    text = _text(bounty)
+    reasons: list[str] = []
+    blocked = ("wallet", "private key", "seed phrase", "solidity", "smart contract", "on-chain")
+    supported = ("python", "api", "script", "automation", "data", "research", "bug", "debug", "etl")
+    high_effort = ("full-stack", "architecture", "large", "complex", "migration", "deploy")
+
+    if any(word in text for word in blocked):
+        return "NOT_RECOMMENDED", ["requires capability outside current safe agent scope"]
+    if any(word in text for word in high_effort) and not any(word in text for word in supported):
+        return "REVIEW", ["high-complexity task needs human review"]
+    if any(word in text for word in supported):
+        reasons.append("matches current technical capabilities")
+        if any(word in text for word in high_effort):
+            reasons.append("complexity requires review")
+            return "REVIEW", reasons
+        return "FEASIBLE", reasons
+    return "REVIEW", ["insufficient task signals to confirm capability"]
+
+
 def opportunity_priority(bounty: dict[str, Any]) -> tuple[float, list[str]]:
     """Add safe, read-only signals to the base score."""
     priority = float(bounty.get("_agent_score", 0))
