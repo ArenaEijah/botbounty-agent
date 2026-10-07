@@ -100,6 +100,18 @@ def score_bounty(bounty: dict[str, Any], minimum_usd: float) -> tuple[float, lis
     return score, reasons
 
 
+def estimated_efficiency(bounty: dict[str, Any]) -> tuple[float, str]:
+    """Estimate reward efficiency from reward and detected effort."""
+    reward = _reward(bounty)
+    text = _text(bounty)
+    high = ("complex", "large", "full-stack", "integration", "migrate", "migration", "deploy", "architecture")
+    low = ("small", "simple", "quick", "minor", "fix", "typo")
+    if any(word in text for word in high):
+        return round(reward * 0.65, 2), "high effort"
+    if any(word in text for word in low):
+        return round(reward * 1.15, 2), "low effort"
+    return round(reward, 2), "standard effort"
+
 def opportunity_priority(bounty: dict[str, Any]) -> tuple[float, list[str]]:
     """Add safe, read-only signals to the base score."""
     priority = float(bounty.get("_agent_score", 0))
