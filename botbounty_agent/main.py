@@ -220,13 +220,41 @@ if __name__ == "__main__":
     main()
 '''
         (root / "solution.py").write_text(implementation, encoding="utf-8")
-        (root / "test_solution.py").write_text(
-            '"""Initial tests for the generated draft."""\n'
-            'from solution import run\n\n'
-            'def test_run_preserves_input_until_requirements_are_mapped():\n'
-            '    assert run({"sample": 1}) == {"sample": 1}\n',
-            encoding="utf-8",
-        )
+        if "api" in text:
+            tests = '''"""Initial API draft tests."""
+from solution import get_json
+
+
+def test_get_json_is_available():
+    assert callable(get_json)
+'''
+        elif any(word in text for word in ("data", "etl")):
+            tests = '''"""Initial data draft tests."""
+from solution import transform
+
+
+def test_transform_copies_rows():
+    source = [{"value": 1}]
+    assert transform(source) == source
+    assert transform(source) is not source
+'''
+        elif any(word in text for word in ("bug", "fix", "debug")):
+            tests = '''"""Initial regression-test placeholder."""
+from solution import reproduce_or_validate
+
+
+def test_regression_hook_exists():
+    assert callable(reproduce_or_validate)
+'''
+        else:
+            tests = '''"""Initial Python/automation draft tests."""
+from solution import run
+
+
+def test_run_preserves_input_until_requirements_are_mapped():
+    assert run({"sample": 1}) == {"sample": 1}
+'''
+        (root / "test_solution.py").write_text(tests, encoding="utf-8")
     return root
 
 def _items(payload):
