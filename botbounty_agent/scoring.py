@@ -27,7 +27,7 @@ def _reward(bounty: dict[str, Any]) -> float:
         except (TypeError, ValueError):
             pass
         if isinstance(value, str):
-            match = re.search(r"[-+]?d+(?:[.,]d+)?", value)
+            match = re.search(r"[-+]?\d+(?:[.,]\d+)?", value)
             if match:
                 try:
                     return float(match.group(0).replace(",", "."))
