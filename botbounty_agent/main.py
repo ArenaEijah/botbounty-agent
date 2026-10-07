@@ -1,6 +1,6 @@
 from .client import BotBountyClient
 from .config import Config
-from .scoring import opportunity_priority, rank_bounties
+from .scoring import feasibility_check, opportunity_priority, rank_bounties
 from .history import BountyHistory
 from .report import write_scan_report
 
@@ -68,11 +68,16 @@ def main() -> None:
         history.save()
         ranked.sort(key=lambda item: (item.get("_agent_priority", item.get("_agent_score", 0)), item.get("_agent_score", 0)), reverse=True)
 
+        interesting = [item for item in ranked if item.get("_agent_priority", 0) >= config.min_priority]
+        for bounty in ranked[:3]:
+            feasibility, feasibility_reasons = feasibility_check(bounty)
+            bounty["_agent_feasibility"] = feasibility
+            bounty["_agent_feasibility_reasons"] = feasibility_reasons
         print(f"Bounties returned: {len(bounties)}")
-        write_scan_report(ranked)
+        print(f"Interesting opportunities (priority >= {config.min_priority}): {len(interesting)}")
+        write_scan_report(ranked, interesting=interesting, min_priority=config.min_priority)
 
         print(f"New bounty IDs: {new_count}")
-        print(f"Interesting opportunities (priority >= {config.min_priority}): {len(interesting)}")
         print("Top candidates:")
 
         for index, bounty in enumerate(ranked[:5], start=1):
@@ -87,7 +92,7 @@ def main() -> None:
                 status = "CHANGED"
             else:
                 status = "seen"
-            print(f"{index}. {title} | reward={reward} | score={bounty['_agent_score']} | priority={bounty.get('_agent_priority', bounty['_agent_score'])} | {status}")
+            print(f"{index}. {title} | reward={reward} | score={bounty['_agent_score']} | priority={bounty.get('_agent_priority', bounty['_agent_score'])} | feasibility={bounty.get('_agent_feasibility', 'REVIEW')} | {status}")
             if bounty["_agent_reasons"]:
                 print("   reasons:", ", ".join(bounty["_agent_reasons"]))
 
