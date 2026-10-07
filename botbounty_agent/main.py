@@ -1,3 +1,5 @@
+from pathlib import Path
+
 from .client import BotBountyClient
 from .config import Config
 from .scoring import feasibility_check, opportunity_priority, rank_bounties
@@ -102,7 +104,47 @@ def _draft_deliverable(bounty):
     ])
     return "\n".join(lines)
 
-def _items(payload):
+def _generate_solution_files(bounty_id, bounty):
+    root = Path(".agent_drafts") / f"{bounty_id or 'unknown'}-solution"
+    root.mkdir(parents=True, exist_ok=True)
+    title = bounty.get("title") or bounty.get("name") or "Selected bounty"
+    description = " ".join(str(bounty.get("description", "")).split())
+    readme = [
+        "# Solution Draft",
+        "",
+        f"Task: {title}",
+        "",
+        "## Scope",
+        description[:2000] if description else "Detailed description was not available.",
+        "",
+        "## Status",
+        "Draft only. Review requirements and acceptance criteria before use.",
+        "",
+        "## Safety",
+        "No claim, submission, deployment, wallet action, payment, or credential storage is performed by this draft.",
+    ]
+    (root / "README.md").write_text("\n".join(readme) + "\n", encoding="utf-8")
+
+    text = " ".join(str(bounty.get(key, "")) for key in ("title", "description", "requirements", "category", "tags")).lower()
+    if any(word in text for word in ("python", "script", "automation", "api")):
+        (root / "solution.py").write_text(
+            '"""Draft solution scaffold. Complete only after requirements review."""\n\n'
+            'def main():\n'
+            '    # TODO: implement the verified bounty requirements.\n'
+            '    raise NotImplementedError("Draft scaffold only")\n\n'
+            'if __name__ == "__main__":\n'
+            '    main()\n',
+            encoding="utf-8",
+        )
+        (root / "test_solution.py").write_text(
+            '"""Draft test scaffold."""\n\n'
+            'def test_requirements_reviewed():\n'
+            '    # TODO: replace with tests derived from the bounty acceptance criteria.\n'
+            '    assert True\n',
+            encoding="utf-8",
+        )
+    return root
+\ndef _items(payload):
     if isinstance(payload, dict):
         for key in ("bounties", "data", "items", "results"):
             value = payload.get(key)
@@ -241,6 +283,8 @@ def main() -> None:
                 bounty["_agent_execution_plan"] = _execution_plan(enriched)
                 bounty["_agent_draft"] = _draft_deliverable(enriched)
                 draft_path = _save_draft(bounty_id, bounty["_agent_draft"])
+                solution_path = _generate_solution_files(bounty_id, enriched)
+                print("   solution draft files:", solution_path)
                 print("   proposed deliverables:", "; ".join(deliverables))
                 print("   draft deliverable prepared:", draft_path)
                 print("   draft deliverable prepared:", "yes")
