@@ -48,6 +48,12 @@ def _execution_plan(bounty):
     ])
     return steps
 
+def _save_draft(bounty_id, draft):
+    target = Path('.agent_drafts') / f'{bounty_id or "unknown"}.md'
+    target.parent.mkdir(parents=True, exist_ok=True)
+    target.write_text(draft + '\n', encoding='utf-8')
+    return target
+
 def _draft_deliverable(bounty):
     title = bounty.get("title") or bounty.get("name") or "Selected bounty"
     text = " ".join(str(bounty.get(key, "")) for key in ("title", "description", "requirements", "category", "tags")).lower()
@@ -234,7 +240,9 @@ def main() -> None:
                 bounty["_agent_missing"] = missing
                 bounty["_agent_execution_plan"] = _execution_plan(enriched)
                 bounty["_agent_draft"] = _draft_deliverable(enriched)
+                draft_path = _save_draft(bounty_id, bounty["_agent_draft"])
                 print("   proposed deliverables:", "; ".join(deliverables))
+                print("   draft deliverable prepared:", draft_path)
                 print("   draft deliverable prepared:", "yes")
                 print("   execution plan:")
                 for step in bounty["_agent_execution_plan"]:
