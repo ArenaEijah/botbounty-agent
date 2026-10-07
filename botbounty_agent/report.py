@@ -84,7 +84,10 @@ def write_scan_report(
         if feasibility_reasons:
             lines.append(f"  - Feasibility review: {'; '.join(str(reason) for reason in feasibility_reasons)}")
 
+    actionable_count = sum(1 for bounty in ranked if bounty.get("_agent_actionable"))
     lines.extend([
+        "",
+        f"Actionable candidates (eligible + ready): {actionable_count}",
         "",
         "## Safety",
         "",
