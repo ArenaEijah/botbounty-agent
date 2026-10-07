@@ -15,8 +15,8 @@ class HistoryTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as tmp:
             path = str(Path(tmp) / "history.json")
             history = BountyHistory(path)
-            history.mark_seen("123")
-            history.mark_seen(456)
+            history.mark_seen("123", {"title": "A", "reward_usd": 10})
+            history.mark_seen(456, {"title": "B", "reward_usd": 20})
             history.save()
 
             reloaded = BountyHistory(path)
