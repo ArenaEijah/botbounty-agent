@@ -2,7 +2,7 @@ from pathlib import Path
 
 from .client import BotBountyClient
 from .config import Config
-from .scoring import bounty_eligibility, feasibility_check, opportunity_priority, rank_bounties, solution_readiness
+from .scoring import bounty_eligibility, data_quality_check, feasibility_check, opportunity_priority, rank_bounties, solution_readiness
 from .history import BountyHistory
 from .report import write_scan_report
 def _prepare_work(bounty):
@@ -403,7 +403,13 @@ def main() -> None:
                 enriched["description"] = description
             if requirements is not None:
                 enriched["requirements"] = requirements
+            data_quality, data_quality_reasons = data_quality_check(enriched)
+            bounty["_agent_data_quality"] = data_quality
+            bounty["_agent_data_quality_reasons"] = data_quality_reasons
             eligibility, eligibility_reasons = bounty_eligibility(enriched, config.min_bounty_usd)
+            if data_quality != "GOOD":
+                eligibility = "REVIEW"
+                eligibility_reasons = data_quality_reasons + eligibility_reasons
             bounty["_agent_eligibility"] = eligibility
             bounty["_agent_eligibility_reasons"] = eligibility_reasons
             readiness, readiness_reasons = solution_readiness(enriched)
@@ -434,6 +440,8 @@ def main() -> None:
             print("   requirements reasons:", ", ".join(bounty.get("_agent_requirements_reasons", [])))
             print("   eligibility:", bounty.get("_agent_eligibility", "REVIEW"))
             print("   eligibility reasons:", ", ".join(bounty.get("_agent_eligibility_reasons", [])))
+            print("   data quality:", bounty.get("_agent_data_quality", "REVIEW"))
+            print("   data quality reasons:", ", ".join(bounty.get("_agent_data_quality_reasons", [])))
             if bounty.get("_agent_solution_readiness") == "READY":
                 deliverables, missing = _prepare_work(enriched)
                 bounty["_agent_deliverables"] = deliverables
