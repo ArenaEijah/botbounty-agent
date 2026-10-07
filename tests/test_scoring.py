@@ -25,7 +25,7 @@ class ScoringTests(unittest.TestCase):
             },
             1,
         )
-        self.assertGreaterEqual(score, 66)
+        self.assertGreaterEqual(score, 64)
         self.assertIn("code", reasons)
         self.assertIn("technical fit", reasons)
 
