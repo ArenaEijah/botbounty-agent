@@ -25,8 +25,8 @@ def write_scan_report(
         "",
         "Feasibility is evaluated read-only from the available task text and requirements.",
         "",
-        "| # | Title | Reward | Efficiency | Score | Priority | Feasibility | Requirements | Status |",
-        "|---:|---|---:|---:|---:|---:|---|---|---|",
+        "| # | Title | Reward | Efficiency | Score | Priority | Eligibility | Feasibility | Requirements | Status |",
+        "|---:|---|---:|---:|---:|---:|---|---|---|---|",
     ]
 
     selected = interesting if interesting is not None else ranked
@@ -54,6 +54,7 @@ def write_scan_report(
             f"{bounty.get('_agent_efficiency', 0)} | "
             f"{bounty.get('_agent_score', 0)} | "
             f"{bounty.get('_agent_priority', bounty.get('_agent_score', 0))} | "
+            f"{bounty.get('_agent_eligibility', 'REVIEW')} | "
             f"{bounty.get('_agent_feasibility', 'REVIEW')} | "
             f"{bounty.get('_agent_requirements_status', 'REVIEW')} | {status} |"
         )
@@ -61,6 +62,10 @@ def write_scan_report(
         reasons = bounty.get("_agent_requirements_reasons") or []
         if reasons:
             lines.append(f"  - Requirements review: {'; '.join(str(reason) for reason in reasons)}")
+
+        eligibility_reasons = bounty.get("_agent_eligibility_reasons") or []
+        if eligibility_reasons:
+            lines.append(f"  - Eligibility: {'; '.join(str(reason) for reason in eligibility_reasons)}")
 
         feasibility_reasons = bounty.get("_agent_feasibility_reasons") or []
         if feasibility_reasons:
