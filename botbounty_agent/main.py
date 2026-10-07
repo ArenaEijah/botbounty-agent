@@ -2,6 +2,7 @@ from .client import BotBountyClient
 from .config import Config
 from .scoring import opportunity_priority, rank_bounties
 from .history import BountyHistory
+from .report import write_scan_report
 
 
 def _items(payload):
@@ -46,6 +47,7 @@ def main() -> None:
 
         if isinstance(payload, dict) and payload.get("_agent_api_error"):
             print("API status:", payload["_agent_api_error"])
+            write_scan_report([], api_status=payload["_agent_api_error"])
             print("Scan paused safely. No claim, submission, wallet action, or payment was performed.")
             return
 
@@ -67,6 +69,8 @@ def main() -> None:
         ranked.sort(key=lambda item: (item.get("_agent_priority", item.get("_agent_score", 0)), item.get("_agent_score", 0)), reverse=True)
 
         print(f"Bounties returned: {len(bounties)}")
+        write_scan_report(ranked)
+
         print(f"New bounty IDs: {new_count}")
         print("Top candidates:")
 
