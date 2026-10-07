@@ -185,6 +185,26 @@ def clarity_adjustment(bounty: dict[str, Any]) -> tuple[float, list[str]]:
     return score, reasons
 
 
+def data_quality_check(bounty: dict[str, Any]) -> tuple[str, list[str]]:
+    """Check whether the bounty data is sufficiently complete for safe review."""
+    title = str(bounty.get("title") or bounty.get("name") or "").strip()
+    description = str(bounty.get("description") or "").strip()
+    reasons: list[str] = []
+
+    if not title:
+        reasons.append("missing title")
+    if len(description) < 40:
+        reasons.append("description too short")
+    if not bounty.get("requirements"):
+        reasons.append("requirements missing")
+    if _reward(bounty) <= 0:
+        reasons.append("reward unavailable or invalid")
+
+    if reasons:
+        return "REVIEW", reasons
+    return "GOOD", ["core bounty data is present"]
+
+
 def bounty_eligibility(
     bounty: dict[str, Any],
     minimum_usd: float,
