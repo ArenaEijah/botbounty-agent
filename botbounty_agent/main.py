@@ -25,6 +25,29 @@ def _prepare_work(bounty):
 
 
 
+def _execution_plan(bounty):
+    text = ' '.join(str(bounty.get(key, '')) for key in ('title', 'description', 'requirements', 'category', 'tags')).lower()
+    steps = [
+        "1. Re-read the complete bounty description and requirements.",
+        "2. Confirm inputs, acceptance criteria, constraints, and required output format.",
+    ]
+    if "api" in text:
+        steps.append("3. Inspect the API contract, endpoints, authentication needs, and expected responses.")
+    elif any(word in text for word in ("python", "script", "automation")):
+        steps.append("3. Design the smallest Python/automation implementation that satisfies the requirements.")
+    else:
+        steps.append("3. Break the requested work into the smallest verifiable implementation steps.")
+    if any(word in text for word in ("bug", "fix", "debug")):
+        steps.append("4. Reproduce or isolate the issue, apply the minimal fix, and add a regression check.")
+    else:
+        steps.append("4. Implement the solution incrementally and verify each requirement.")
+    steps.extend([
+        "5. Run relevant tests/checks and verify the acceptance criteria.",
+        "6. Review the final deliverables against every stated requirement.",
+        "7. Prepare the result for review; do not submit or claim the bounty automatically.",
+    ])
+    return steps
+
 def _items(payload):
     if isinstance(payload, dict):
         for key in ("bounties", "data", "items", "results"):
@@ -161,7 +184,11 @@ def main() -> None:
                 deliverables, missing = _prepare_work(enriched)
                 bounty["_agent_deliverables"] = deliverables
                 bounty["_agent_missing"] = missing
+                bounty["_agent_execution_plan"] = _execution_plan(enriched)
                 print("   proposed deliverables:", "; ".join(deliverables))
+                print("   execution plan:")
+                for step in bounty["_agent_execution_plan"]:
+                    print("     ", step)
                 if missing:
                     print("   missing information:", "; ".join(missing))
 
