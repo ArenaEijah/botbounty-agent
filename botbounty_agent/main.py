@@ -23,7 +23,7 @@ def _prepare_work(bounty):
         missing.append('full description')
     if not bounty.get('requirements'):
         missing.append('explicit requirements')
-    return deliverables, missinging
+    return deliverables, missing
 
 
 
@@ -355,7 +355,6 @@ def main() -> None:
             bounty["_agent_feasibility_reasons"] = feasibility_reasons
         print(f"Bounties returned: {len(bounties)}")
         print(f"Interesting opportunities (priority >= {config.min_priority}): {len(interesting)}")
-        write_scan_report(ranked, interesting=interesting, min_priority=config.min_priority)
 
         print(f"New bounty IDs: {new_count}")
         print("Top candidates:")
@@ -443,6 +442,8 @@ def main() -> None:
                 if missing:
                     print("   missing information:", "; ".join(missing))
 
+        # Write the report after detail enrichment so readiness and review reasons are included.
+        write_scan_report(ranked, interesting=interesting, min_priority=config.min_priority)
         print(f"Read-only detail enrichment: {detailed_count} candidate(s).")
         print("Read-only scan complete. No claim, submission, wallet action, or payment was performed.")
     finally:
