@@ -23,8 +23,8 @@ def write_scan_report(
         "",
         f"## Interesting opportunities (priority >= {min_priority})",
         "",
-        "| # | Title | Reward | Efficiency | Score | Priority | Status |",
-        "|---:|---|---:|---:|---:|---:|---|",
+        "| # | Title | Reward | Efficiency | Score | Priority | Feasibility | Status |",
+        "|---:|---|---:|---:|---:|---:|---|---|",
     ]
 
     selected = interesting if interesting is not None else ranked
@@ -49,8 +49,10 @@ def write_scan_report(
 
         lines.append(
             f"| {index} | {title} | {reward} | "
+            f"{bounty.get('_agent_efficiency', 0)} | "
             f"{bounty.get('_agent_score', 0)} | "
-            f"{bounty.get('_agent_priority', bounty.get('_agent_score', 0))} | {status} |"
+            f"{bounty.get('_agent_priority', bounty.get('_agent_score', 0))} | "
+            f"{bounty.get('_agent_feasibility', 'REVIEW')} | {status} |"
         )
 
     lines.extend([
