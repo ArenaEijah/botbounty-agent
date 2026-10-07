@@ -22,16 +22,17 @@ def _reward(bounty: dict[str, Any]) -> float:
         value = bounty.get(key)
         if isinstance(value, dict):
             value = value.get("usd") or value.get("amount") or value.get("value")
+
         try:
             return float(value)
         except (TypeError, ValueError):
-            continue
+            pass
 
         if isinstance(value, str):
-            match = re.search(r"[-+]?\d+(?:[.,]\d+)?", value.replace(",", "."))
+            match = re.search(r"[-+]?\d+(?:[.,]\d+)?", value)
             if match:
                 try:
-                    return float(match.group(0))
+                    return float(match.group(0).replace(",", "."))
                 except ValueError:
                     pass
     return 0.0
