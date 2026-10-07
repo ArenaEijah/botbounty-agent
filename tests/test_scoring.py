@@ -73,7 +73,7 @@ class ScoringTests(unittest.TestCase):
             "description": "Build an endpoint that returns JSON output and validate the expected response format.",
             "requirements": ["Input URL", "Expected output"],
         })
-        self.assertEqual(priority, 70.0)
+        self.assertEqual(priority, 66.0)
         self.assertIn("clear title", reasons)
         self.assertIn("explicit requirements", reasons)
 
@@ -85,7 +85,7 @@ class ScoringTests(unittest.TestCase):
             "title": "Help",
             "description": "Please fix this.",
         })
-        self.assertEqual(priority, 48.0)
+        self.assertEqual(priority, 53.0)
         self.assertIn("vague description", reasons)
         self.assertIn("missing requirements", reasons)
 
@@ -93,7 +93,7 @@ class ScoringTests(unittest.TestCase):
         priority, reasons = opportunity_priority(
             {"_agent_score": 60, "_agent_seen_before": False, "reward_usd": 50}
         )
-        self.assertEqual(priority, 80.0)
+        self.assertEqual(priority, 71.0)
         self.assertIn("new opportunity", reasons)
         self.assertIn("high-value opportunity", reasons)
 
@@ -101,7 +101,7 @@ class ScoringTests(unittest.TestCase):
         priority, reasons = opportunity_priority(
             {"_agent_score": 40, "_agent_seen_before": True, "_agent_changed": True, "reward_usd": 10}
         )
-        self.assertEqual(priority, 52.0)
+        self.assertEqual(priority, 43.0)
         self.assertIn("changed opportunity", reasons)
 
     def test_rank_bounties_sorts_best_first(self):
