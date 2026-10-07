@@ -144,7 +144,8 @@ def _generate_solution_files(bounty_id, bounty):
             encoding="utf-8",
         )
     return root
-\ndef _items(payload):
+
+def _items(payload):
     if isinstance(payload, dict):
         for key in ("bounties", "data", "items", "results"):
             value = payload.get(key)
