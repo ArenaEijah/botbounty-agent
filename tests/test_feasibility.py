@@ -1,7 +1,7 @@
 import unittest
 
 from botbounty_agent.scoring import feasibility_check
-from botbounty_agent.main import _execution_plan
+from botbounty_agent.main import _draft_deliverable, _execution_plan
 
 
 class FeasibilityTests(unittest.TestCase):
@@ -19,6 +19,12 @@ class FeasibilityTests(unittest.TestCase):
         self.assertGreaterEqual(len(plan), 5)
         self.assertTrue(any("API" in step for step in plan))
         self.assertTrue(any("do not submit" in step for step in plan))
+
+    def test_draft_deliverable_is_safe(self):
+        draft = _draft_deliverable({"title": "Python API automation"})
+        self.assertIn("# Draft Deliverable", draft)
+        self.assertIn("This is a draft only", draft)
+        self.assertNotIn("private key", draft.lower())
 
     def test_feasibility_rejects_wallet_task(self):
         result, reasons = feasibility_check({"title": "Connect wallet and use private key", "reward_usd": 100})
