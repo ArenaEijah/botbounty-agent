@@ -60,7 +60,7 @@ class BountyHistory:
 
     def save(self) -> None:
         self.path.parent.mkdir(parents=True, exist_ok=True)
-        self.path.write_text(
-            json.dumps(self.records, indent=2, sort_keys=True),
-            encoding="utf-8",
-        )
+        payload = json.dumps(self.records, indent=2, sort_keys=True) + "\n"
+        temp_path = self.path.with_suffix(self.path.suffix + ".tmp")
+        temp_path.write_text(payload, encoding="utf-8")
+        temp_path.replace(self.path)
