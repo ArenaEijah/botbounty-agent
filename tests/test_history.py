@@ -23,10 +23,21 @@ class HistoryTests(unittest.TestCase):
             self.assertTrue(reloaded.contains("123"))
             self.assertTrue(reloaded.contains(456))
 
+    def test_changed_bounty_is_detected(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            path = str(Path(tmp) / "history.json")
+            history = BountyHistory(path)
+            first = {"title": "Task", "reward_usd": 10}
+            second = {"title": "Task", "reward_usd": 25}
+
+            history.mark_seen("123", first)
+            self.assertFalse(history.changed("123", first))
+            self.assertTrue(history.changed("123", second))
+
     def test_none_is_not_recorded(self):
         with tempfile.TemporaryDirectory() as tmp:
             history = BountyHistory(str(Path(tmp) / "history.json"))
-            history.mark_seen(None)
+            history.mark_seen(None, {})
             history.save()
             self.assertFalse(history.contains(None))
             self.assertEqual(history.seen, set())
