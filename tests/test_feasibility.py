@@ -1,6 +1,6 @@
 import unittest
 
-from botbounty_agent.scoring import feasibility_check, requirements_completeness, solution_readiness
+from botbounty_agent.scoring import bounty_eligibility, feasibility_check, requirements_completeness, solution_readiness
 from botbounty_agent.main import _draft_deliverable, _execution_plan, _generate_solution_files, _validate_solution_draft
 
 
@@ -61,6 +61,34 @@ class FeasibilityTests(unittest.TestCase):
         result, reasons = requirements_completeness({"title": "Help with code", "description": "Please fix this."})
         self.assertEqual(result, "REVIEW")
         self.assertTrue(reasons)
+
+    def test_bounty_eligibility_rejects_low_reward(self):
+        result, reasons = bounty_eligibility({"reward_usd": 0.5}, 1)
+        self.assertEqual(result, "NOT_ELIGIBLE")
+        self.assertTrue(reasons)
+
+    def test_bounty_eligibility_rejects_closed_status(self):
+        result, reasons = bounty_eligibility({"reward_usd": 10, "status": "completed"}, 1)
+        self.assertEqual(result, "NOT_ELIGIBLE")
+        self.assertTrue(reasons)
+
+    def test_bounty_eligibility_rejects_expired_deadline(self):
+        from datetime import datetime, timezone
+        result, reasons = bounty_eligibility(
+            {"reward_usd": 10, "deadline": "2020-01-01T00:00:00+00:00"},
+            1,
+            now=datetime(2026, 1, 1, tzinfo=timezone.utc),
+        )
+        self.assertEqual(result, "NOT_ELIGIBLE")
+        self.assertIn("deadline has passed", reasons)
+
+    def test_bounty_eligibility_reviews_unchanged_duplicate(self):
+        result, reasons = bounty_eligibility(
+            {"reward_usd": 10, "_agent_seen_before": True, "_agent_changed": False},
+            1,
+        )
+        self.assertEqual(result, "REVIEW")
+        self.assertIn("already seen and unchanged", reasons)
 
     def test_solution_readiness_requires_both_checks(self):
         result, reasons = solution_readiness({
