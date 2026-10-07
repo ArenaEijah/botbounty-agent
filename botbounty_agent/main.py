@@ -118,12 +118,25 @@ def main() -> None:
             description = detail.get("description")
             requirements = detail.get("requirements")
 
+            # Re-check feasibility using the richer detail, still read-only.
+            enriched = dict(bounty)
+            if description is not None:
+                enriched["description"] = description
+            if requirements is not None:
+                enriched["requirements"] = requirements
+            if bounty.get("_agent_feasibility") != "NOT_RECOMMENDED":
+                feasibility, feasibility_reasons = feasibility_check(enriched)
+                bounty["_agent_feasibility"] = feasibility
+                bounty["_agent_feasibility_reasons"] = feasibility_reasons
+
             print(f"   details loaded: {bounty_id}")
             if description:
                 compact = " ".join(str(description).split())
                 print("   description:", compact[:300])
             if requirements:
                 print("   requirements:", requirements)
+            print("   feasibility:", bounty.get("_agent_feasibility", "REVIEW"))
+            print("   feasibility reasons:", ", ".join(bounty.get("_agent_feasibility_reasons", [])))
 
         print(f"Read-only detail enrichment: {detailed_count} candidate(s).")
         print("Read-only scan complete. No claim, submission, wallet action, or payment was performed.")
