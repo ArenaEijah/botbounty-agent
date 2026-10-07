@@ -19,6 +19,25 @@ class ReportTests(unittest.TestCase):
             self.assertNotIn("| Low |", report)
             self.assertIn("priority >= 60", report)
 
+    def test_report_includes_eligibility(self):
+        bounty = {
+            "id": 1,
+            "title": "Eligible task",
+            "reward_usd": 10,
+            "_agent_priority": 75,
+            "_agent_eligibility": "ELIGIBLE",
+            "_agent_eligibility_reasons": ["reward and availability checks passed"],
+            "_agent_feasibility": "FEASIBLE",
+            "_agent_requirements_status": "READY",
+        }
+        with tempfile.TemporaryDirectory() as tmp:
+            path = Path(tmp) / "report.md"
+            write_scan_report([bounty], interesting=[bounty], path=str(path))
+            content = path.read_text(encoding="utf-8")
+            self.assertIn("Eligibility", content)
+            self.assertIn("ELIGIBLE", content)
+            self.assertIn("reward and availability checks passed", content)
+
     def test_report_includes_readiness_reasons(self):
         with tempfile.TemporaryDirectory() as tmp:
             path = str(Path(tmp) / "report.md")
