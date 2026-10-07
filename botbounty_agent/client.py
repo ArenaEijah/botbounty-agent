@@ -11,8 +11,8 @@ class BotBountyClient:
     def close(self) -> None:
         self.client.close()
 
-    def list_bounties(self):
-        url = f"{self.base_url}/agent/bounties"
+    def _get_json_with_retry(self, path: str):
+        url = f"{self.base_url}{path}"
         retryable_statuses = {500, 502, 503, 504}
 
         for attempt in range(1, 4):
@@ -26,9 +26,21 @@ class BotBountyClient:
                 time.sleep(attempt)
 
         return {
-            "bounties": [],
             "_agent_api_error": (
                 f"BotBounty API returned HTTP {response.status_code} "
                 f"after 3 attempts. The API is temporarily unavailable."
-            ),
+            )
         }
+
+    def list_bounties(self):
+        payload = self._get_json_with_retry("/agent/bounties")
+
+        if isinstance(payload, dict) and payload.get("_agent_api_error"):
+            payload["bounties"] = []
+        return payload
+
+    def get_bounty(self, bounty_id):
+        if bounty_id is None or str(bounty_id).strip() == "":
+            raise ValueError("bounty_id is required")
+
+        return self._get_json_with_retry(f"/agent/bounties/{bounty_id}")
