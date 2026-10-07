@@ -1,7 +1,7 @@
 import unittest
 
 from botbounty_agent.scoring import feasibility_check
-from botbounty_agent.main import _draft_deliverable, _execution_plan
+from botbounty_agent.main import _draft_deliverable, _execution_plan, _generate_solution_files
 
 
 class FeasibilityTests(unittest.TestCase):
@@ -25,6 +25,22 @@ class FeasibilityTests(unittest.TestCase):
         self.assertIn("# Draft Deliverable", draft)
         self.assertIn("This is a draft only", draft)
         self.assertNotIn("private key", draft.lower())
+
+    def test_solution_scaffold_generation_is_safe(self):
+        import tempfile
+        from pathlib import Path
+        with tempfile.TemporaryDirectory() as tmp:
+            original = Path.cwd()
+            try:
+                import os
+                os.chdir(tmp)
+                root = _generate_solution_files("123", {"title": "Python API task", "description": "Build an API script"})
+                self.assertTrue((root / "README.md").exists())
+                self.assertTrue((root / "solution.py").exists())
+                self.assertTrue((root / "test_solution.py").exists())
+                self.assertIn("Draft", (root / "README.md").read_text())
+            finally:
+                os.chdir(original)
 
     def test_feasibility_rejects_wallet_task(self):
         result, reasons = feasibility_check({"title": "Connect wallet and use private key", "reward_usd": 100})
