@@ -38,6 +38,8 @@ class FeasibilityTests(unittest.TestCase):
                 self.assertTrue((root / "README.md").exists())
                 self.assertTrue((root / "solution.py").exists())
                 self.assertTrue((root / "test_solution.py").exists())
+                self.assertTrue((root / "SOLUTION_SPEC.md").exists())
+                self.assertIn("Acceptance checklist", (root / "SOLUTION_SPEC.md").read_text())
                 self.assertIn("Draft", (root / "README.md").read_text())
             finally:
                 os.chdir(original)
