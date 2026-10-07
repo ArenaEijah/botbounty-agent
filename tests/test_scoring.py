@@ -29,6 +29,23 @@ class ScoringTests(unittest.TestCase):
         self.assertIn("automation", reasons)
         self.assertIn("technical fit", reasons)
 
+    def test_reward_tiers_and_effort_are_applied(self):
+        score, reasons = score_bounty(
+            {"title": "Simple Python task", "reward_usd": 50},
+            1,
+        )
+        self.assertIn("strong reward", reasons)
+        self.assertIn("likely lower effort", reasons)
+        self.assertGreaterEqual(score, 80)
+
+    def test_high_effort_task_is_penalized(self):
+        score, reasons = score_bounty(
+            {"title": "Complex full-stack migration", "reward_usd": 20},
+            1,
+        )
+        self.assertIn("likely higher effort", reasons)
+        self.assertIn("good reward", reasons)
+
     def test_urgent_bounty_is_penalized(self):
         score, reasons = score_bounty(
             {"title": "Urgent research task", "reward_usd": 10},
