@@ -1,3 +1,5 @@
+import time
+
 import httpx
 
 
@@ -10,14 +12,23 @@ class BotBountyClient:
         self.client.close()
 
     def list_bounties(self):
-        response = self.client.get(f"{self.base_url}/agent/bounties")
-        if response.status_code >= 500:
-            return {
-                "bounties": [],
-                "_agent_api_error": (
-                    f"BotBounty API returned HTTP {response.status_code}. "
-                    "The API is temporarily unavailable."
-                ),
-            }
-        response.raise_for_status()
-        return response.json()
+        url = f"{self.base_url}/agent/bounties"
+        retryable_statuses = {500, 502, 503, 504}
+
+        for attempt in range(1, 4):
+            response = self.client.get(url)
+
+            if response.status_code not in retryable_statuses:
+                response.raise_for_status()
+                return response.json()
+
+            if attempt < 3:
+                time.sleep(attempt)
+
+        return {
+            "bounties": [],
+            "_agent_api_error": (
+                f"BotBounty API returned HTTP {response.status_code} "
+                f"after 3 attempts. The API is temporarily unavailable."
+            ),
+        }
