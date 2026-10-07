@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import re
 from typing import Any
 
 
@@ -9,6 +10,8 @@ def _text(bounty: dict[str, Any]) -> str:
         value = bounty.get(key)
         if isinstance(value, list):
             parts.extend(str(item) for item in value)
+        elif isinstance(value, dict):
+            parts.extend(str(item) for item in value.values())
         elif value is not None:
             parts.append(str(value))
     return " ".join(parts).lower()
@@ -17,10 +20,20 @@ def _text(bounty: dict[str, Any]) -> str:
 def _reward(bounty: dict[str, Any]) -> float:
     for key in ("reward_usd", "bounty_usd", "amount_usd", "reward"):
         value = bounty.get(key)
+        if isinstance(value, dict):
+            value = value.get("usd") or value.get("amount") or value.get("value")
         try:
             return float(value)
         except (TypeError, ValueError):
             continue
+
+        if isinstance(value, str):
+            match = re.search(r"[-+]?\d+(?:[.,]\d+)?", value.replace(",", "."))
+            if match:
+                try:
+                    return float(match.group(0))
+                except ValueError:
+                    pass
     return 0.0
 
 
@@ -43,16 +56,22 @@ def score_bounty(bounty: dict[str, Any], minimum_usd: float) -> tuple[float, lis
         "research": 10,
     }
     for keyword, points in preferred.items():
-        if keyword in text:
+        if re.search(rf"\b{re.escape(keyword)}\b", text):
             score += points
             reasons.append(keyword)
             break
 
-    if any(word in text for word in ("api", "python", "script", "bug", "debug", "etl")):
+    if any(
+        re.search(rf"\b{re.escape(word)}\b", text)
+        for word in ("api", "python", "script", "bug", "debug", "etl")
+    ):
         score += 8
         reasons.append("technical fit")
 
-    if any(word in text for word in ("urgent", "asap", "today", "deadline")):
+    if any(
+        re.search(rf"\b{re.escape(word)}\b", text)
+        for word in ("urgent", "asap", "today", "deadline")
+    ):
         score -= 3
         reasons.append("time pressure")
 
