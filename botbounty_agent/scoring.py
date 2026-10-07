@@ -237,10 +237,16 @@ def bounty_eligibility(
             current = now or datetime.now(timezone.utc)
             if deadline <= current:
                 return "NOT_ELIGIBLE", ["deadline has passed"]
+            remaining_hours = (deadline - current).total_seconds() / 3600
+            if remaining_hours < 24:
+                reasons.append("deadline is less than 24 hours away")
         except ValueError:
-            reasons.append("deadline format could not be verified")
+            return "REVIEW", ["deadline format could not be verified"]
 
-    if reasons and reasons == ["already seen and unchanged"]:
+    if reasons and (
+        "already seen and unchanged" in reasons
+        or "deadline is less than 24 hours away" in reasons
+    ):
         return "REVIEW", reasons
     return "ELIGIBLE", reasons or ["reward and availability checks passed"]
 
