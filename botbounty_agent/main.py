@@ -125,6 +125,29 @@ def _generate_solution_files(bounty_id, bounty):
     ]
     (root / "README.md").write_text("\n".join(readme) + "\n", encoding="utf-8")
 
+    requirements = bounty.get("requirements") or "No explicit requirements were provided."
+    requirement_lines = [line.strip(" -*\\t") for line in str(requirements).splitlines() if line.strip()]
+    if not requirement_lines:
+        requirement_lines = [str(requirements).strip()]
+    spec = [
+        "# Solution Specification",
+        "",
+        f"## Task\\n{title}",
+        "",
+        "## Requirements",
+    ]
+    spec.extend(f"- {line}" for line in requirement_lines[:30])
+    spec.extend([
+        "",
+        "## Acceptance checklist",
+        *[f"- [ ] Verify: {line}" for line in requirement_lines[:30]],
+        "- [ ] Add tests for the main success path",
+        "- [ ] Add tests for relevant failure/edge cases",
+        "- [ ] Confirm no secrets or private credentials are embedded",
+        "- [ ] Human review completed before any submission",
+    ])
+    (root / "SOLUTION_SPEC.md").write_text("\n".join(spec) + "\n", encoding="utf-8")
+
     text = " ".join(str(bounty.get(key, "")) for key in ("title", "description", "requirements", "category", "tags")).lower()
     if any(word in text for word in ("python", "script", "automation", "api")):
         (root / "solution.py").write_text(
