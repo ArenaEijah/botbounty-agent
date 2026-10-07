@@ -257,6 +257,29 @@ def test_run_preserves_input_until_requirements_are_mapped():
         (root / "test_solution.py").write_text(tests, encoding="utf-8")
     return root
 
+def _validate_solution_draft(root):
+    """Run lightweight static validation without executing generated solution code."""
+    checks = []
+    solution = root / "solution.py"
+    tests = root / "test_solution.py"
+    if solution.exists():
+        compile(solution.read_text(encoding="utf-8"), str(solution), "exec")
+        checks.append("solution syntax: OK")
+    if tests.exists():
+        compile(tests.read_text(encoding="utf-8"), str(tests), "exec")
+        checks.append("test syntax: OK")
+    forbidden = ("private key", "seed phrase", "mnemonic", "wallet secret")
+    combined = ""
+    for path in (solution, tests, root / "README.md", root / "SOLUTION_SPEC.md"):
+        if path.exists():
+            combined += path.read_text(encoding="utf-8").lower()
+    if any(term in combined for term in forbidden):
+        checks.append("security scan: REVIEW")
+    else:
+        checks.append("security scan: OK")
+    return checks
+
+
 def _items(payload):
     if isinstance(payload, dict):
         for key in ("bounties", "data", "items", "results"):
@@ -398,6 +421,8 @@ def main() -> None:
                 draft_path = _save_draft(bounty_id, bounty["_agent_draft"])
                 solution_path = _generate_solution_files(bounty_id, enriched)
                 print("   solution draft files:", solution_path)
+                validation = _validate_solution_draft(solution_path)
+                print("   draft validation:", "; ".join(validation))
                 print("   proposed deliverables:", "; ".join(deliverables))
                 print("   draft deliverable prepared:", draft_path)
                 print("   draft deliverable prepared:", "yes")
