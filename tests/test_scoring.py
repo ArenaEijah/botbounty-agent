@@ -1,6 +1,6 @@
 import unittest
 
-from botbounty_agent.scoring import _reward, rank_bounties, score_bounty
+from botbounty_agent.scoring import _reward, opportunity_priority, rank_bounties, score_bounty
 
 
 class ScoringTests(unittest.TestCase):
@@ -53,6 +53,21 @@ class ScoringTests(unittest.TestCase):
         )
         self.assertIn("time pressure", reasons)
         self.assertLess(score, 50)
+
+    def test_opportunity_priority_boosts_new_and_high_value(self):
+        priority, reasons = opportunity_priority(
+            {"_agent_score": 60, "_agent_seen_before": False, "reward_usd": 50}
+        )
+        self.assertEqual(priority, 75.0)
+        self.assertIn("new opportunity", reasons)
+        self.assertIn("high-value opportunity", reasons)
+
+    def test_opportunity_priority_boosts_changed(self):
+        priority, reasons = opportunity_priority(
+            {"_agent_score": 40, "_agent_seen_before": True, "_agent_changed": True, "reward_usd": 10}
+        )
+        self.assertEqual(priority, 52.0)
+        self.assertIn("changed opportunity", reasons)
 
     def test_rank_bounties_sorts_best_first(self):
         ranked = rank_bounties(
