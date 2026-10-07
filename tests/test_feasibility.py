@@ -1,7 +1,7 @@
 import unittest
 
 from botbounty_agent.scoring import feasibility_check
-from botbounty_agent.main import _draft_deliverable, _execution_plan, _generate_solution_files
+from botbounty_agent.main import _draft_deliverable, _execution_plan, _generate_solution_files, _validate_solution_draft
 
 
 class FeasibilityTests(unittest.TestCase):
@@ -40,6 +40,10 @@ class FeasibilityTests(unittest.TestCase):
                 self.assertTrue((root / "test_solution.py").exists())
                 self.assertTrue((root / "SOLUTION_SPEC.md").exists())
                 self.assertIn("Acceptance checklist", (root / "SOLUTION_SPEC.md").read_text())
+                checks = _validate_solution_draft(root)
+                self.assertIn("solution syntax: OK", checks)
+                self.assertIn("test syntax: OK", checks)
+                self.assertIn("security scan: OK", checks)
                 self.assertIn("Draft", (root / "README.md").read_text())
             finally:
                 os.chdir(original)
