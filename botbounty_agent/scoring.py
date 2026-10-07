@@ -125,6 +125,16 @@ def opportunity_priority(bounty: dict[str, Any]) -> tuple[float, list[str]]:
         reasons.append("changed opportunity")
 
     reward = _reward(bounty)
+    efficiency, effort_label = estimated_efficiency(bounty)
+    bounty["_agent_efficiency"] = efficiency
+    bounty["_agent_effort"] = effort_label
+    if efficiency >= 50:
+        priority += 5
+        reasons.append("strong reward/effort ratio")
+    elif efficiency < 10 and reward > 0:
+        priority -= 3
+        reasons.append("weak reward/effort ratio")
+
     if reward >= 50:
         priority += 5
         reasons.append("high-value opportunity")
