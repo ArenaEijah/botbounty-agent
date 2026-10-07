@@ -22,14 +22,12 @@ def _reward(bounty: dict[str, Any]) -> float:
         value = bounty.get(key)
         if isinstance(value, dict):
             value = value.get("usd") or value.get("amount") or value.get("value")
-
         try:
             return float(value)
         except (TypeError, ValueError):
             pass
-
         if isinstance(value, str):
-            match = re.search(r"[-+]?\d+(?:[.,]\d+)?", value)
+            match = re.search(r"[-+]?d+(?:[.,]d+)?", value)
             if match:
                 try:
                     return float(match.group(0).replace(",", "."))
@@ -39,30 +37,19 @@ def _reward(bounty: dict[str, Any]) -> float:
 
 
 def _effort_adjustment(text: str) -> tuple[float, list[str]]:
-    """Estimate effort conservatively from task wording; never claims actual effort."""
     score = 0.0
     reasons: list[str] = []
-
     low_effort = ("small", "simple", "quick", "minor", "fix", "typo")
     high_effort = (
-        "complex",
-        "large",
-        "full-stack",
-        "integration",
-        "migrate",
-        "migration",
-        "deploy",
-        "architecture",
+        "complex", "large", "full-stack", "integration", "migrate",
+        "migration", "deploy", "architecture",
     )
-
     if any(re.search(rf"\b{re.escape(word)}\b", text) for word in low_effort):
         score += 5
         reasons.append("likely lower effort")
-
     if any(re.search(rf"\b{re.escape(word)}\b", text) for word in high_effort):
         score -= 8
         reasons.append("likely higher effort")
-
     return score, reasons
 
 
@@ -78,7 +65,6 @@ def score_bounty(bounty: dict[str, Any], minimum_usd: float) -> tuple[float, lis
     elif reward > 0:
         score += 10
 
-    # Reward tiers distinguish genuinely attractive payouts from barely qualifying ones.
     if reward >= 50:
         score += 15
         reasons.append("strong reward")
@@ -86,12 +72,7 @@ def score_bounty(bounty: dict[str, Any], minimum_usd: float) -> tuple[float, lis
         score += 8
         reasons.append("good reward")
 
-    preferred = {
-        "code": 18,
-        "automation": 16,
-        "data": 12,
-        "research": 10,
-    }
+    preferred = {"code": 18, "automation": 16, "data": 12, "research": 10}
     for keyword, points in preferred.items():
         if re.search(rf"\b{re.escape(keyword)}\b", text):
             score += points
@@ -117,6 +98,26 @@ def score_bounty(bounty: dict[str, Any], minimum_usd: float) -> tuple[float, lis
         reasons.append("time pressure")
 
     return score, reasons
+
+
+def opportunity_priority(bounty: dict[str, Any]) -> tuple[float, list[str]]:
+    """Add safe, read-only signals to the base score."""
+    priority = float(bounty.get("_agent_score", 0))
+    reasons: list[str] = []
+
+    if not bounty.get("_agent_seen_before"):
+        priority += 10
+        reasons.append("new opportunity")
+    elif bounty.get("_agent_changed"):
+        priority += 12
+        reasons.append("changed opportunity")
+
+    reward = _reward(bounty)
+    if reward >= 50:
+        priority += 5
+        reasons.append("high-value opportunity")
+
+    return round(priority, 1), reasons
 
 
 def rank_bounties(bounties: list[dict[str, Any]], minimum_usd: float) -> list[dict[str, Any]]:
