@@ -30,6 +30,19 @@ def write_scan_report(
     ]
 
     selected = interesting if interesting is not None else ranked
+    eligibility_counts = {"ELIGIBLE": 0, "REVIEW": 0, "NOT_ELIGIBLE": 0}
+    readiness_counts = {"READY": 0, "REVIEW": 0, "NOT_RECOMMENDED": 0}
+    for bounty in ranked:
+        eligibility = bounty.get("_agent_eligibility", "REVIEW")
+        readiness = bounty.get("_agent_solution_readiness", "REVIEW")
+        eligibility_counts[eligibility] = eligibility_counts.get(eligibility, 0) + 1
+        readiness_counts[readiness] = readiness_counts.get(readiness, 0) + 1
+
+    lines[lines.index("") + 1:lines.index("", lines.index("") + 1)] = [
+        f"Total bounties scanned: {len(ranked)}",
+        f"Eligibility: {eligibility_counts['ELIGIBLE']} eligible, {eligibility_counts['REVIEW']} review, {eligibility_counts['NOT_ELIGIBLE']} not eligible",
+        f"Solution readiness: {readiness_counts['READY']} ready, {readiness_counts['REVIEW']} review, {readiness_counts['NOT_RECOMMENDED']} not recommended",
+    ]
     if not selected:
         lines.append("| No opportunities currently meet the priority threshold. | | | | | | | |")
     for index, bounty in enumerate(selected[:10], start=1):
