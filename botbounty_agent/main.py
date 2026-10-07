@@ -56,9 +56,10 @@ def main() -> None:
         for bounty in ranked:
             bounty_id = _bounty_id(bounty)
             bounty["_agent_seen_before"] = history.contains(bounty_id)
-            if bounty_id is not None and not bounty["_agent_seen_before"]:
+            bounty["_agent_changed"] = history.changed(bounty_id, bounty)
+            if bounty_id is not None and (not bounty["_agent_seen_before"] or bounty["_agent_changed"]):
                 new_count += 1
-                history.mark_seen(bounty_id)
+            history.mark_seen(bounty_id, bounty)
         history.save()
 
         print(f"Bounties returned: {len(bounties)}")
@@ -71,7 +72,12 @@ def main() -> None:
                 "reward_usd",
                 bounty.get("bounty_usd", bounty.get("amount_usd", bounty.get("reward", "?"))),
             )
-            status = "NEW" if not bounty.get("_agent_seen_before") else "seen"
+            if not bounty.get("_agent_seen_before"):
+                status = "NEW"
+            elif bounty.get("_agent_changed"):
+                status = "CHANGED"
+            else:
+                status = "seen"
             print(f"{index}. {title} | reward={reward} | score={bounty['_agent_score']} | {status}")
             if bounty["_agent_reasons"]:
                 print("   reasons:", ", ".join(bounty["_agent_reasons"]))
