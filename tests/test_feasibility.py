@@ -1,6 +1,6 @@
 import unittest
 
-from botbounty_agent.scoring import feasibility_check
+from botbounty_agent.scoring import feasibility_check, requirements_completeness
 from botbounty_agent.main import _draft_deliverable, _execution_plan, _generate_solution_files, _validate_solution_draft
 
 
@@ -47,6 +47,20 @@ class FeasibilityTests(unittest.TestCase):
                 self.assertIn("Draft", (root / "README.md").read_text())
             finally:
                 os.chdir(original)
+
+    def test_requirements_completeness_ready_when_concrete(self):
+        result, reasons = requirements_completeness({
+            "title": "Python API task",
+            "description": "Build an endpoint that returns JSON output.",
+            "requirements": ["Input URL", "Expected output", "Acceptance test"],
+        })
+        self.assertEqual(result, "READY")
+        self.assertIn("concrete implementation signals", reasons)
+
+    def test_requirements_completeness_reviews_vague_task(self):
+        result, reasons = requirements_completeness({"title": "Help with code", "description": "Please fix this."})
+        self.assertEqual(result, "REVIEW")
+        self.assertTrue(reasons)
 
     def test_feasibility_rejects_wallet_task(self):
         result, reasons = feasibility_check({"title": "Connect wallet and use private key", "reward_usd": 100})
