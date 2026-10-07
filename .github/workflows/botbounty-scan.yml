@@ -32,6 +32,6 @@ jobs:
           name: botbounty-scan-report-${{ github.run_number }}
           path: |
             .agent_reports/latest.md
-            .agent_drafts/*.md
+            .agent_drafts/**
           if-no-files-found: warn
           retention-days: 30
