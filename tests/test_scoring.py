@@ -26,7 +26,7 @@ class ScoringTests(unittest.TestCase):
             1,
         )
         self.assertGreaterEqual(score, 64)
-        self.assertIn("code", reasons)
+        self.assertIn("automation", reasons)
         self.assertIn("technical fit", reasons)
 
     def test_urgent_bounty_is_penalized(self):
