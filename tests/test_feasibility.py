@@ -55,7 +55,7 @@ class FeasibilityTests(unittest.TestCase):
             "requirements": ["Input URL", "Expected output", "Acceptance test"],
         })
         self.assertEqual(result, "READY")
-        self.assertIn("concrete implementation signals", reasons)
+        self.assertIn("requirements contain concrete implementation signals", reasons)
 
     def test_requirements_completeness_reviews_vague_task(self):
         result, reasons = requirements_completeness({"title": "Help with code", "description": "Please fix this."})
