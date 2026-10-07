@@ -29,13 +29,41 @@ def _reward(bounty: dict[str, Any]) -> float:
             pass
 
         if isinstance(value, str):
-            match = re.search(r"[-+]?\d+(?:[.,]\d+)?", value)
+            match = re.search(r"[-+]?d+(?:[.,]\d+)?", value)
             if match:
                 try:
                     return float(match.group(0).replace(",", "."))
                 except ValueError:
                     pass
     return 0.0
+
+
+def _effort_adjustment(text: str) -> tuple[float, list[str]]:
+    """Estimate effort conservatively from task wording; never claims actual effort."""
+    score = 0.0
+    reasons: list[str] = []
+
+    low_effort = ("small", "simple", "quick", "minor", "fix", "typo")
+    high_effort = (
+        "complex",
+        "large",
+        "full-stack",
+        "integration",
+        "migrate",
+        "migration",
+        "deploy",
+        "architecture",
+    )
+
+    if any(re.search(rf"\b{re.escape(word)}\b", text) for word in low_effort):
+        score += 5
+        reasons.append("likely lower effort")
+
+    if any(re.search(rf"\b{re.escape(word)}\b", text) for word in high_effort):
+        score -= 8
+        reasons.append("likely higher effort")
+
+    return score, reasons
 
 
 def score_bounty(bounty: dict[str, Any], minimum_usd: float) -> tuple[float, list[str]]:
@@ -49,6 +77,14 @@ def score_bounty(bounty: dict[str, Any], minimum_usd: float) -> tuple[float, lis
         reasons.append("reward meets minimum")
     elif reward > 0:
         score += 10
+
+    # Reward tiers distinguish genuinely attractive payouts from barely qualifying ones.
+    if reward >= 50:
+        score += 15
+        reasons.append("strong reward")
+    elif reward >= 20:
+        score += 8
+        reasons.append("good reward")
 
     preferred = {
         "code": 18,
@@ -68,6 +104,10 @@ def score_bounty(bounty: dict[str, Any], minimum_usd: float) -> tuple[float, lis
     ):
         score += 8
         reasons.append("technical fit")
+
+    effort_score, effort_reasons = _effort_adjustment(text)
+    score += effort_score
+    reasons.extend(effort_reasons)
 
     if any(
         re.search(rf"\b{re.escape(word)}\b", text)
