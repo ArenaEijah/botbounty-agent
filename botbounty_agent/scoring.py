@@ -157,6 +157,19 @@ def requirements_completeness(bounty: dict[str, Any]) -> tuple[str, list[str]]:
         return "REVIEW", reasons
     return "READY", ["requirements contain concrete implementation signals"]
 
+def solution_readiness(bounty: dict[str, Any]) -> tuple[str, list[str]]:
+    """Combine feasibility and requirement checks into one safe draft gate."""
+    feasibility, feasibility_reasons = feasibility_check(bounty)
+    completeness, completeness_reasons = requirements_completeness(bounty)
+    reasons = list(feasibility_reasons) + list(completeness_reasons)
+
+    if feasibility == "NOT_RECOMMENDED":
+        return "NOT_RECOMMENDED", reasons
+    if feasibility != "FEASIBLE" or completeness != "READY":
+        return "REVIEW", reasons
+    return "READY", reasons
+
+
 def opportunity_priority(bounty: dict[str, Any]) -> tuple[float, list[str]]:
     """Add safe, read-only signals to the base score."""
     priority = float(bounty.get("_agent_score", 0))
