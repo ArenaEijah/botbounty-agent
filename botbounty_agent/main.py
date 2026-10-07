@@ -21,6 +21,12 @@ def main() -> None:
     client = BotBountyClient(config.api_base)
     try:
         payload = client.list_bounties()
+
+        if isinstance(payload, dict) and payload.get("_agent_api_error"):
+            print("API status:", payload["_agent_api_error"])
+            print("Scan paused safely. No claim, submission, wallet action, or payment was performed.")
+            return
+
         bounties = _items(payload)
         ranked = rank_bounties(bounties, config.min_bounty_usd)
 
@@ -28,7 +34,10 @@ def main() -> None:
         print("Top candidates:")
         for index, bounty in enumerate(ranked[:5], start=1):
             title = bounty.get("title") or bounty.get("name") or f"Bounty {bounty.get('id', '?')}"
-            reward = bounty.get("reward_usd", bounty.get("bounty_usd", bounty.get("amount_usd", bounty.get("reward", "?"))))
+            reward = bounty.get(
+                "reward_usd",
+                bounty.get("bounty_usd", bounty.get("amount_usd", bounty.get("reward", "?"))),
+            )
             print(f"{index}. {title} | reward={reward} | score={bounty['_agent_score']}")
             if bounty["_agent_reasons"]:
                 print("   reasons:", ", ".join(bounty["_agent_reasons"]))
