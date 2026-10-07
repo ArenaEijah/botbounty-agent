@@ -2,7 +2,7 @@ from pathlib import Path
 
 from .client import BotBountyClient
 from .config import Config
-from .scoring import feasibility_check, opportunity_priority, rank_bounties
+from .scoring import feasibility_check, opportunity_priority, rank_bounties, requirements_completeness
 from .history import BountyHistory
 from .report import write_scan_report
 def _prepare_work(bounty):
@@ -23,7 +23,7 @@ def _prepare_work(bounty):
         missing.append('full description')
     if not bounty.get('requirements'):
         missing.append('explicit requirements')
-    return deliverables, missing
+    return deliverables, missinging
 
 
 
@@ -409,6 +409,10 @@ def main() -> None:
                 bounty["_agent_feasibility"] = feasibility
                 bounty["_agent_feasibility_reasons"] = feasibility_reasons
 
+            completeness, completeness_reasons = requirements_completeness(enriched)
+            bounty["_agent_requirements_status"] = completeness
+            bounty["_agent_requirements_reasons"] = completeness_reasons
+
             print(f"   details loaded: {bounty_id}")
             if description:
                 compact = " ".join(str(description).split())
@@ -417,7 +421,9 @@ def main() -> None:
                 print("   requirements:", requirements)
             print("   feasibility:", bounty.get("_agent_feasibility", "REVIEW"))
             print("   feasibility reasons:", ", ".join(bounty.get("_agent_feasibility_reasons", [])))
-            if bounty.get("_agent_feasibility") == "FEASIBLE":
+            print("   requirements status:", bounty.get("_agent_requirements_status", "REVIEW"))
+            print("   requirements reasons:", ", ".join(bounty.get("_agent_requirements_reasons", [])))
+            if bounty.get("_agent_feasibility") == "FEASIBLE" and bounty.get("_agent_requirements_status") == "READY":
                 deliverables, missing = _prepare_work(enriched)
                 bounty["_agent_deliverables"] = deliverables
                 bounty["_agent_missing"] = missing
