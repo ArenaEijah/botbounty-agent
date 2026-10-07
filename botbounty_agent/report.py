@@ -7,6 +7,8 @@ from pathlib import Path
 def write_scan_report(
     ranked: list[dict],
     *,
+    interesting: list[dict] | None = None,
+    min_priority: float = 60,
     api_status: str = "ok",
     path: str = ".agent_reports/latest.md",
 ) -> None:
@@ -19,13 +21,16 @@ def write_scan_report(
         f"Generated: {datetime.now(timezone.utc).isoformat()}",
         f"API status: {api_status}",
         "",
-        "## Top opportunities",
+        f"## Interesting opportunities (priority >= {min_priority})",
         "",
         "| # | Title | Reward | Score | Priority | Status |",
         "|---:|---|---:|---:|---:|---|",
     ]
 
-    for index, bounty in enumerate(ranked[:10], start=1):
+    selected = interesting if interesting is not None else ranked
+    if not selected:
+        lines.append("| No opportunities currently meet the priority threshold. | | | | | |")
+    for index, bounty in enumerate(selected[:10], start=1):
         title = str(
             bounty.get("title")
             or bounty.get("name")
