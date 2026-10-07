@@ -23,8 +23,8 @@ def write_scan_report(
         "",
         f"## Interesting opportunities (priority >= {min_priority})",
         "",
-        "| # | Title | Reward | Score | Priority | Status |",
-        "|---:|---|---:|---:|---:|---|",
+        "| # | Title | Reward | Efficiency | Score | Priority | Status |",
+        "|---:|---|---:|---:|---:|---:|---|",
     ]
 
     selected = interesting if interesting is not None else ranked
