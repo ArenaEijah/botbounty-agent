@@ -1,6 +1,7 @@
 from .client import BotBountyClient
 from .config import Config
 from .scoring import rank_bounties
+from .history import BountyHistory
 
 
 def _items(payload):
@@ -38,6 +39,7 @@ def main() -> None:
     print("BotBounty Agent — simulation:", config.dry_run)
     print("Minimum bounty:", config.min_bounty_usd, "USD")
 
+    history = BountyHistory()
     client = BotBountyClient(config.api_base)
     try:
         payload = client.list_bounties()
@@ -50,7 +52,17 @@ def main() -> None:
         bounties = _items(payload)
         ranked = rank_bounties(bounties, config.min_bounty_usd)
 
+        new_count = 0
+        for bounty in ranked:
+            bounty_id = _bounty_id(bounty)
+            bounty["_agent_seen_before"] = history.contains(bounty_id)
+            if bounty_id is not None and not bounty["_agent_seen_before"]:
+                new_count += 1
+                history.mark_seen(bounty_id)
+        history.save()
+
         print(f"Bounties returned: {len(bounties)}")
+        print(f"New bounty IDs: {new_count}")
         print("Top candidates:")
 
         for index, bounty in enumerate(ranked[:5], start=1):
@@ -59,7 +71,8 @@ def main() -> None:
                 "reward_usd",
                 bounty.get("bounty_usd", bounty.get("amount_usd", bounty.get("reward", "?"))),
             )
-            print(f"{index}. {title} | reward={reward} | score={bounty['_agent_score']}")
+            status = "NEW" if not bounty.get("_agent_seen_before") else "seen"
+            print(f"{index}. {title} | reward={reward} | score={bounty['_agent_score']} | {status}")
             if bounty["_agent_reasons"]:
                 print("   reasons:", ", ".join(bounty["_agent_reasons"]))
 
