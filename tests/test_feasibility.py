@@ -1,6 +1,6 @@
 import unittest
 
-from botbounty_agent.scoring import feasibility_check, requirements_completeness
+from botbounty_agent.scoring import feasibility_check, requirements_completeness, solution_readiness
 from botbounty_agent.main import _draft_deliverable, _execution_plan, _generate_solution_files, _validate_solution_draft
 
 
@@ -59,6 +59,23 @@ class FeasibilityTests(unittest.TestCase):
 
     def test_requirements_completeness_reviews_vague_task(self):
         result, reasons = requirements_completeness({"title": "Help with code", "description": "Please fix this."})
+        self.assertEqual(result, "REVIEW")
+        self.assertTrue(reasons)
+
+    def test_solution_readiness_requires_both_checks(self):
+        result, reasons = solution_readiness({
+            "title": "Python API task",
+            "description": "Build an endpoint that returns JSON output.",
+            "requirements": ["Input URL", "Expected output", "Acceptance test"],
+        })
+        self.assertEqual(result, "READY")
+        self.assertTrue(reasons)
+
+    def test_solution_readiness_reviews_incomplete_task(self):
+        result, reasons = solution_readiness({
+            "title": "Python API task",
+            "description": "Please fix this.",
+        })
         self.assertEqual(result, "REVIEW")
         self.assertTrue(reasons)
 
