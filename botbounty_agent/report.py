@@ -23,6 +23,8 @@ def write_scan_report(
         "",
         f"## Interesting opportunities (priority >= {min_priority})",
         "",
+        "Feasibility is evaluated read-only from the available task text and requirements.",
+        "",
         "| # | Title | Reward | Efficiency | Score | Priority | Feasibility | Status |",
         "|---:|---|---:|---:|---:|---:|---|---|",
     ]
