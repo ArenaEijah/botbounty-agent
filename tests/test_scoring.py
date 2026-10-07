@@ -64,6 +64,31 @@ class ScoringTests(unittest.TestCase):
         self.assertEqual(efficiency, 65.0)
         self.assertEqual(label, "high effort")
 
+    def test_opportunity_priority_rewards_clear_requirements(self):
+        priority, reasons = opportunity_priority({
+            "_agent_score": 60,
+            "_agent_seen_before": True,
+            "reward_usd": 20,
+            "title": "Python API task",
+            "description": "Build an endpoint that returns JSON output and validate the expected response format.",
+            "requirements": ["Input URL", "Expected output"],
+        })
+        self.assertEqual(priority, 70.0)
+        self.assertIn("clear title", reasons)
+        self.assertIn("explicit requirements", reasons)
+
+    def test_opportunity_priority_penalizes_vague_task(self):
+        priority, reasons = opportunity_priority({
+            "_agent_score": 60,
+            "_agent_seen_before": True,
+            "reward_usd": 20,
+            "title": "Help",
+            "description": "Please fix this.",
+        })
+        self.assertEqual(priority, 48.0)
+        self.assertIn("vague description", reasons)
+        self.assertIn("missing requirements", reasons)
+
     def test_opportunity_priority_boosts_new_and_high_value(self):
         priority, reasons = opportunity_priority(
             {"_agent_score": 60, "_agent_seen_before": False, "reward_usd": 50}
