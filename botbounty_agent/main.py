@@ -2,7 +2,7 @@ from pathlib import Path
 
 from .client import BotBountyClient
 from .config import Config
-from .scoring import opportunity_priority, rank_bounties, solution_readiness
+from .scoring import feasibility_check, opportunity_priority, rank_bounties, solution_readiness
 from .history import BountyHistory
 from .report import write_scan_report
 def _prepare_work(bounty):
