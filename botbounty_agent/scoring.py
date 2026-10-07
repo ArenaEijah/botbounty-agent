@@ -185,6 +185,46 @@ def clarity_adjustment(bounty: dict[str, Any]) -> tuple[float, list[str]]:
     return score, reasons
 
 
+def bounty_eligibility(
+    bounty: dict[str, Any],
+    minimum_usd: float,
+    *,
+    now=None,
+) -> tuple[str, list[str]]:
+    """Gate work on reward, status, deadline, and unchanged duplicates."""
+    from datetime import datetime, timezone
+
+    reasons: list[str] = []
+    reward = _reward(bounty)
+    if reward < minimum_usd:
+        return "NOT_ELIGIBLE", [f"reward below minimum ({minimum_usd:g} USD)"]
+
+    status = str(bounty.get("status") or "").strip().lower()
+    closed_statuses = {"closed", "completed", "cancelled", "canceled", "expired", "claimed"}
+    if status in closed_statuses:
+        return "NOT_ELIGIBLE", [f"bounty status is {status}"]
+
+    if bounty.get("_agent_seen_before") and not bounty.get("_agent_changed"):
+        reasons.append("already seen and unchanged")
+
+    deadline_value = bounty.get("deadline") or bounty.get("expires_at") or bounty.get("due_at")
+    if deadline_value:
+        try:
+            deadline_text = str(deadline_value).strip().replace("Z", "+00:00")
+            deadline = datetime.fromisoformat(deadline_text)
+            if deadline.tzinfo is None:
+                deadline = deadline.replace(tzinfo=timezone.utc)
+            current = now or datetime.now(timezone.utc)
+            if deadline <= current:
+                return "NOT_ELIGIBLE", ["deadline has passed"]
+        except ValueError:
+            reasons.append("deadline format could not be verified")
+
+    if reasons and reasons == ["already seen and unchanged"]:
+        return "REVIEW", reasons
+    return "ELIGIBLE", reasons or ["reward and availability checks passed"]
+
+
 def solution_readiness(bounty: dict[str, Any]) -> tuple[str, list[str]]:
     """Combine feasibility and requirement checks into one safe draft gate."""
     feasibility, feasibility_reasons = feasibility_check(bounty)
