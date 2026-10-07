@@ -58,6 +58,14 @@ def write_scan_report(
             f"{bounty.get('_agent_requirements_status', 'REVIEW')} | {status} |"
         )
 
+        reasons = bounty.get("_agent_requirements_reasons") or []
+        if reasons:
+            lines.append(f"  - Requirements review: {'; '.join(str(reason) for reason in reasons)}")
+
+        feasibility_reasons = bounty.get("_agent_feasibility_reasons") or []
+        if feasibility_reasons:
+            lines.append(f"  - Feasibility review: {'; '.join(str(reason) for reason in feasibility_reasons)}")
+
     lines.extend([
         "",
         "## Safety",
