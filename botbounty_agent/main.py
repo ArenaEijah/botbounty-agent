@@ -126,7 +126,12 @@ def _generate_solution_files(bounty_id, bounty):
     (root / "README.md").write_text("\n".join(readme) + "\n", encoding="utf-8")
 
     requirements = bounty.get("requirements") or "No explicit requirements were provided."
-    requirement_lines = [line.strip(" -*\\t") for line in str(requirements).splitlines() if line.strip()]
+    if isinstance(requirements, dict):
+        requirement_lines = [f"{key}: {value}" for key, value in requirements.items()]
+    elif isinstance(requirements, list):
+        requirement_lines = [str(item).strip() for item in requirements if str(item).strip()]
+    else:
+        requirement_lines = [line.strip(" -*\\t") for line in str(requirements).splitlines() if line.strip()]
     if not requirement_lines:
         requirement_lines = [str(requirements).strip()]
     spec = [
