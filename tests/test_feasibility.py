@@ -102,6 +102,24 @@ class FeasibilityTests(unittest.TestCase):
         self.assertEqual(result, "NOT_ELIGIBLE")
         self.assertIn("deadline has passed", reasons)
 
+    def test_bounty_eligibility_reviews_near_deadline(self):
+        from datetime import datetime, timezone
+        result, reasons = bounty_eligibility(
+            {"reward_usd": 10, "deadline": "2026-01-01T12:00:00+00:00"},
+            1,
+            now=datetime(2026, 1, 1, 0, tzinfo=timezone.utc),
+        )
+        self.assertEqual(result, "REVIEW")
+        self.assertIn("deadline is less than 24 hours away", reasons)
+
+    def test_bounty_eligibility_reviews_invalid_deadline(self):
+        result, reasons = bounty_eligibility(
+            {"reward_usd": 10, "deadline": "not-a-date"},
+            1,
+        )
+        self.assertEqual(result, "REVIEW")
+        self.assertIn("deadline format could not be verified", reasons)
+
     def test_bounty_eligibility_reviews_unchanged_duplicate(self):
         result, reasons = bounty_eligibility(
             {"reward_usd": 10, "_agent_seen_before": True, "_agent_changed": False},
