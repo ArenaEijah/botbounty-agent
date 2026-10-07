@@ -13,6 +13,26 @@ def _items(payload):
     return payload if isinstance(payload, list) else []
 
 
+def _bounty_id(bounty):
+    for key in ("id", "bounty_id"):
+        value = bounty.get(key)
+        if value is not None and str(value).strip():
+            return value
+    return None
+
+
+def _detail_summary(detail):
+    if not isinstance(detail, dict):
+        return None
+
+    for key in ("bounty", "data", "result"):
+        value = detail.get(key)
+        if isinstance(value, dict):
+            return value
+
+    return detail
+
+
 def main() -> None:
     config = Config()
     print("BotBounty Agent — simulation:", config.dry_run)
@@ -32,6 +52,7 @@ def main() -> None:
 
         print(f"Bounties returned: {len(bounties)}")
         print("Top candidates:")
+
         for index, bounty in enumerate(ranked[:5], start=1):
             title = bounty.get("title") or bounty.get("name") or f"Bounty {bounty.get('id', '?')}"
             reward = bounty.get(
@@ -42,6 +63,36 @@ def main() -> None:
             if bounty["_agent_reasons"]:
                 print("   reasons:", ", ".join(bounty["_agent_reasons"]))
 
+        # Read-only enrichment: inspect details for the top 3 candidates.
+        # No claim, submit, wallet, or payment endpoint is called.
+        detailed_count = 0
+        for bounty in ranked[:3]:
+            bounty_id = _bounty_id(bounty)
+            if bounty_id is None:
+                continue
+
+            try:
+                detail = _detail_summary(client.get_bounty(bounty_id))
+            except Exception as exc:
+                print(f"   detail unavailable for {bounty_id}: {exc}")
+                continue
+
+            if isinstance(detail, dict) and detail.get("_agent_api_error"):
+                print(f"   detail unavailable for {bounty_id}: {detail['_agent_api_error']}")
+                continue
+
+            detailed_count += 1
+            description = detail.get("description")
+            requirements = detail.get("requirements")
+
+            print(f"   details loaded: {bounty_id}")
+            if description:
+                compact = " ".join(str(description).split())
+                print("   description:", compact[:300])
+            if requirements:
+                print("   requirements:", requirements)
+
+        print(f"Read-only detail enrichment: {detailed_count} candidate(s).")
         print("Read-only scan complete. No claim, submission, wallet action, or payment was performed.")
     finally:
         client.close()
