@@ -3,6 +3,26 @@ from .config import Config
 from .scoring import feasibility_check, opportunity_priority, rank_bounties
 from .history import BountyHistory
 from .report import write_scan_report
+def _prepare_work(bounty):
+    text = ' '.join(str(bounty.get(key, '')) for key in ('title', 'description', 'requirements', 'category', 'tags')).lower()
+    deliverables = []
+    if any(word in text for word in ('python', 'script', 'automation')):
+        deliverables.append('Python script or automation implementation')
+    if 'api' in text:
+        deliverables.append('API integration or tested API calls')
+    if any(word in text for word in ('bug', 'fix', 'debug')):
+        deliverables.append('bug fix with verification/tests')
+    if any(word in text for word in ('data', 'etl')):
+        deliverables.append('data processing/output')
+    if not deliverables:
+        deliverables.append('implementation matching the stated requirements')
+    missing = []
+    if not bounty.get('description'):
+        missing.append('full description')
+    if not bounty.get('requirements'):
+        missing.append('explicit requirements')
+    return deliverables, missing
+
 
 
 def _items(payload):
@@ -137,6 +157,13 @@ def main() -> None:
                 print("   requirements:", requirements)
             print("   feasibility:", bounty.get("_agent_feasibility", "REVIEW"))
             print("   feasibility reasons:", ", ".join(bounty.get("_agent_feasibility_reasons", [])))
+            if bounty.get("_agent_feasibility") == "FEASIBLE":
+                deliverables, missing = _prepare_work(enriched)
+                bounty["_agent_deliverables"] = deliverables
+                bounty["_agent_missing"] = missing
+                print("   proposed deliverables:", "; ".join(deliverables))
+                if missing:
+                    print("   missing information:", "; ".join(missing))
 
         print(f"Read-only detail enrichment: {detailed_count} candidate(s).")
         print("Read-only scan complete. No claim, submission, wallet action, or payment was performed.")
