@@ -58,6 +58,20 @@ class ReportTests(unittest.TestCase):
             self.assertIn("Requirements review: description is too short", report)
             self.assertIn("Feasibility review: high-complexity task needs human review", report)
 
+    def test_report_includes_summary_counts(self):
+        bounties = [
+            {"id": 1, "title": "Ready", "_agent_eligibility": "ELIGIBLE", "_agent_solution_readiness": "READY"},
+            {"id": 2, "title": "Review", "_agent_eligibility": "REVIEW", "_agent_solution_readiness": "REVIEW"},
+            {"id": 3, "title": "Rejected", "_agent_eligibility": "NOT_ELIGIBLE", "_agent_solution_readiness": "NOT_RECOMMENDED"},
+        ]
+        with tempfile.TemporaryDirectory() as tmp:
+            path = str(Path(tmp) / "report.md")
+            write_scan_report(bounties, interesting=bounties, path=path)
+            report = Path(path).read_text(encoding="utf-8")
+            self.assertIn("Total bounties scanned: 3", report)
+            self.assertIn("Eligibility: 1 eligible, 1 review, 1 not eligible", report)
+            self.assertIn("Solution readiness: 1 ready, 1 review, 1 not recommended", report)
+
     def test_empty_interesting_report_is_explicit(self):
         with tempfile.TemporaryDirectory() as tmp:
             path = str(Path(tmp) / "report.md")
