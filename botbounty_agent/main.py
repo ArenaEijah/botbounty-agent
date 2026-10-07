@@ -149,21 +149,82 @@ def _generate_solution_files(bounty_id, bounty):
     (root / "SOLUTION_SPEC.md").write_text("\n".join(spec) + "\n", encoding="utf-8")
 
     text = " ".join(str(bounty.get(key, "")) for key in ("title", "description", "requirements", "category", "tags")).lower()
-    if any(word in text for word in ("python", "script", "automation", "api")):
-        (root / "solution.py").write_text(
-            '"""Draft solution scaffold. Complete only after requirements review."""\n\n'
-            'def main():\n'
-            '    # TODO: implement the verified bounty requirements.\n'
-            '    raise NotImplementedError("Draft scaffold only")\n\n'
-            'if __name__ == "__main__":\n'
-            '    main()\n',
-            encoding="utf-8",
-        )
+    if any(word in text for word in ("python", "script", "automation", "api", "data", "etl", "bug", "fix", "debug")):
+        if "api" in text:
+            implementation = '''"""Initial API solution draft. Unverified against the bounty acceptance criteria."""
+import os
+from typing import Any
+import httpx
+
+
+def get_json(url: str, *, timeout: float = 20.0) -> Any:
+    """Fetch JSON without embedding credentials in source code."""
+    headers = {}
+    token = os.getenv("API_TOKEN")
+    if token:
+        headers["Authorization"] = f"Bearer {token}"
+    response = httpx.get(url, headers=headers, timeout=timeout)
+    response.raise_for_status()
+    return response.json()
+
+
+def main() -> None:
+    raise NotImplementedError("Map the verified bounty inputs and endpoint to get_json().")
+
+
+if __name__ == "__main__":
+    main()
+'''
+        elif any(word in text for word in ("data", "etl")):
+            implementation = '''"""Initial data-processing solution draft. Unverified."""
+from collections.abc import Iterable
+
+
+def transform(rows: Iterable[dict]) -> list[dict]:
+    """Return normalized row copies; customize fields after requirements review."""
+    return [dict(row) for row in rows]
+
+
+def main() -> None:
+    raise NotImplementedError("Map the verified input/output format to transform().")
+
+
+if __name__ == "__main__":
+    main()
+'''
+        elif any(word in text for word in ("bug", "fix", "debug")):
+            implementation = '''"""Initial bug-fix solution draft. Unverified."""
+def reproduce_or_validate() -> None:
+    """Replace with the smallest regression check derived from the report."""
+    raise NotImplementedError("Implement after reproducing the reported behavior.")
+
+
+if __name__ == "__main__":
+    reproduce_or_validate()
+'''
+        else:
+            implementation = '''"""Initial Python/automation solution draft. Unverified."""
+from typing import Any
+
+
+def run(input_data: Any) -> Any:
+    """Small deterministic entry point to adapt to the verified requirements."""
+    return input_data
+
+
+def main() -> None:
+    raise NotImplementedError("Map the verified inputs, outputs, and acceptance criteria to run().")
+
+
+if __name__ == "__main__":
+    main()
+'''
+        (root / "solution.py").write_text(implementation, encoding="utf-8")
         (root / "test_solution.py").write_text(
-            '"""Draft test scaffold."""\n\n'
-            'def test_requirements_reviewed():\n'
-            '    # TODO: replace with tests derived from the bounty acceptance criteria.\n'
-            '    assert True\n',
+            '"""Initial tests for the generated draft."""\n'
+            'from solution import run\n\n'
+            'def test_run_preserves_input_until_requirements_are_mapped():\n'
+            '    assert run({"sample": 1}) == {"sample": 1}\n',
             encoding="utf-8",
         )
     return root
