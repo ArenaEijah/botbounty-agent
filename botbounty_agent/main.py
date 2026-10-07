@@ -72,6 +72,7 @@ def main() -> None:
         write_scan_report(ranked)
 
         print(f"New bounty IDs: {new_count}")
+        print(f"Interesting opportunities (priority >= {config.min_priority}): {len(interesting)}")
         print("Top candidates:")
 
         for index, bounty in enumerate(ranked[:5], start=1):
