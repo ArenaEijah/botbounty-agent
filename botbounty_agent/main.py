@@ -48,6 +48,54 @@ def _execution_plan(bounty):
     ])
     return steps
 
+def _draft_deliverable(bounty):
+    title = bounty.get("title") or bounty.get("name") or "Selected bounty"
+    text = " ".join(str(bounty.get(key, "")) for key in ("title", "description", "requirements", "category", "tags")).lower()
+    lines = [
+        "# Draft Deliverable",
+        "",
+        f"## Task",
+        str(title),
+        "",
+        "## Proposed solution",
+    ]
+    if "api" in text:
+        lines.extend([
+            "1. Define the required API inputs and expected responses.",
+            "2. Implement the smallest client/request flow needed by the requirements.",
+            "3. Add error handling and response validation.",
+        ])
+    elif any(word in text for word in ("python", "script", "automation")):
+        lines.extend([
+            "1. Create a focused Python implementation matching the stated inputs and outputs.",
+            "2. Keep configuration and secrets outside source code.",
+            "3. Add validation and automated tests for the main path and failure cases.",
+        ])
+    elif any(word in text for word in ("bug", "fix", "debug")):
+        lines.extend([
+            "1. Reproduce the reported behavior.",
+            "2. Isolate the smallest responsible change.",
+            "3. Add a regression test and verify the fix.",
+        ])
+    else:
+        lines.extend([
+            "1. Translate the stated requirements into concrete implementation tasks.",
+            "2. Implement the smallest verifiable solution.",
+            "3. Validate the output against the acceptance criteria.",
+        ])
+    lines.extend([
+        "",
+        "## Validation checklist",
+        "- Requirements reviewed",
+        "- Acceptance criteria checked",
+        "- Tests/checks completed",
+        "- Secrets and credentials excluded",
+        "",
+        "## Safety",
+        "This is a draft only. It has not been submitted, claimed, deployed, or used for any payment or wallet action.",
+    ])
+    return "\n".join(lines)
+
 def _items(payload):
     if isinstance(payload, dict):
         for key in ("bounties", "data", "items", "results"):
@@ -185,7 +233,9 @@ def main() -> None:
                 bounty["_agent_deliverables"] = deliverables
                 bounty["_agent_missing"] = missing
                 bounty["_agent_execution_plan"] = _execution_plan(enriched)
+                bounty["_agent_draft"] = _draft_deliverable(enriched)
                 print("   proposed deliverables:", "; ".join(deliverables))
+                print("   draft deliverable prepared:", "yes")
                 print("   execution plan:")
                 for step in bounty["_agent_execution_plan"]:
                     print("     ", step)
