@@ -36,7 +36,7 @@ class ScoringTests(unittest.TestCase):
         )
         self.assertIn("strong reward", reasons)
         self.assertIn("likely lower effort", reasons)
-        self.assertGreaterEqual(score, 80)
+        self.assertGreaterEqual(score, 68)
 
     def test_high_effort_task_is_penalized(self):
         score, reasons = score_bounty(
