@@ -349,7 +349,7 @@ def main() -> None:
         ranked.sort(key=lambda item: (item.get("_agent_priority", item.get("_agent_score", 0)), item.get("_agent_score", 0)), reverse=True)
 
         interesting = [item for item in ranked if item.get("_agent_priority", 0) >= config.min_priority]
-        for bounty in ranked[:3]:
+        for bounty in ranked[:5]:
             feasibility, feasibility_reasons = feasibility_check(bounty)
             bounty["_agent_feasibility"] = feasibility
             bounty["_agent_feasibility_reasons"] = feasibility_reasons
@@ -463,7 +463,15 @@ def main() -> None:
                     print("   missing information:", "; ".join(missing))
 
         # Write the report after detail enrichment so readiness and review reasons are included.
+        actionable = [
+            item for item in interesting
+            if item.get("_agent_eligibility") == "ELIGIBLE"
+            and item.get("_agent_solution_readiness") == "READY"
+        ]
+        for item in ranked:
+            item["_agent_actionable"] = item in actionable
         write_scan_report(ranked, interesting=interesting, min_priority=config.min_priority)
+        print(f"Actionable candidates (eligible + ready): {len(actionable)}")
         print(f"Read-only detail enrichment: {detailed_count} candidate(s).")
         print("Read-only scan complete. No claim, submission, wallet action, or payment was performed.")
     finally:
