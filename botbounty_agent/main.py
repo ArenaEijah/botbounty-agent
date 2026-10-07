@@ -1,6 +1,6 @@
 from .client import BotBountyClient
 from .config import Config
-from .scoring import rank_bounties
+from .scoring import opportunity_priority, rank_bounties
 from .history import BountyHistory
 
 
@@ -60,7 +60,11 @@ def main() -> None:
             if bounty_id is not None and (not bounty["_agent_seen_before"] or bounty["_agent_changed"]):
                 new_count += 1
             history.mark_seen(bounty_id, bounty)
+            priority, priority_reasons = opportunity_priority(bounty)
+            bounty["_agent_priority"] = priority
+            bounty["_agent_priority_reasons"] = priority_reasons
         history.save()
+        ranked.sort(key=lambda item: (item.get("_agent_priority", item.get("_agent_score", 0)), item.get("_agent_score", 0)), reverse=True)
 
         print(f"Bounties returned: {len(bounties)}")
         print(f"New bounty IDs: {new_count}")
@@ -78,7 +82,7 @@ def main() -> None:
                 status = "CHANGED"
             else:
                 status = "seen"
-            print(f"{index}. {title} | reward={reward} | score={bounty['_agent_score']} | {status}")
+            print(f"{index}. {title} | reward={reward} | score={bounty['_agent_score']} | priority={bounty.get('_agent_priority', bounty['_agent_score'])} | {status}")
             if bounty["_agent_reasons"]:
                 print("   reasons:", ", ".join(bounty["_agent_reasons"]))
 
