@@ -2,7 +2,7 @@ from pathlib import Path
 
 from .client import BotBountyClient
 from .config import Config
-from .scoring import feasibility_check, opportunity_priority, rank_bounties, solution_readiness
+from .scoring import bounty_eligibility, feasibility_check, opportunity_priority, rank_bounties, solution_readiness
 from .history import BountyHistory
 from .report import write_scan_report
 def _prepare_work(bounty):
@@ -403,7 +403,16 @@ def main() -> None:
                 enriched["description"] = description
             if requirements is not None:
                 enriched["requirements"] = requirements
+            eligibility, eligibility_reasons = bounty_eligibility(enriched, config.min_bounty_usd)
+            bounty["_agent_eligibility"] = eligibility
+            bounty["_agent_eligibility_reasons"] = eligibility_reasons
             readiness, readiness_reasons = solution_readiness(enriched)
+            if eligibility == "NOT_ELIGIBLE":
+                readiness = "REVIEW"
+                readiness_reasons = eligibility_reasons + readiness_reasons
+            elif eligibility == "REVIEW":
+                readiness = "REVIEW"
+                readiness_reasons = eligibility_reasons + readiness_reasons
             bounty["_agent_solution_readiness"] = readiness
             bounty["_agent_solution_readiness_reasons"] = readiness_reasons
             bounty["_agent_feasibility"] = "NOT_RECOMMENDED" if readiness == "NOT_RECOMMENDED" else (
@@ -423,6 +432,8 @@ def main() -> None:
             print("   feasibility reasons:", ", ".join(bounty.get("_agent_feasibility_reasons", [])))
             print("   requirements status:", bounty.get("_agent_requirements_status", "REVIEW"))
             print("   requirements reasons:", ", ".join(bounty.get("_agent_requirements_reasons", [])))
+            print("   eligibility:", bounty.get("_agent_eligibility", "REVIEW"))
+            print("   eligibility reasons:", ", ".join(bounty.get("_agent_eligibility_reasons", [])))
             if bounty.get("_agent_solution_readiness") == "READY":
                 deliverables, missing = _prepare_work(enriched)
                 bounty["_agent_deliverables"] = deliverables
