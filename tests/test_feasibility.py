@@ -1,6 +1,6 @@
 import unittest
 
-from botbounty_agent.scoring import bounty_eligibility, feasibility_check, requirements_completeness, solution_readiness
+from botbounty_agent.scoring import bounty_eligibility, data_quality_check, feasibility_check, requirements_completeness, solution_readiness
 from botbounty_agent.main import _draft_deliverable, _execution_plan, _generate_solution_files, _validate_solution_draft
 
 
@@ -60,6 +60,26 @@ class FeasibilityTests(unittest.TestCase):
     def test_requirements_completeness_reviews_vague_task(self):
         result, reasons = requirements_completeness({"title": "Help with code", "description": "Please fix this."})
         self.assertEqual(result, "REVIEW")
+        self.assertTrue(reasons)
+
+    def test_data_quality_requires_core_fields(self):
+        result, reasons = data_quality_check({
+            "title": "Task",
+            "description": "Too short",
+        })
+        self.assertEqual(result, "REVIEW")
+        self.assertIn("description too short", reasons)
+        self.assertIn("requirements missing", reasons)
+        self.assertIn("reward unavailable or invalid", reasons)
+
+    def test_data_quality_accepts_complete_bounty(self):
+        result, reasons = data_quality_check({
+            "title": "Python API task",
+            "description": "Build an endpoint that returns the expected JSON response for the supplied input.",
+            "requirements": ["Input", "Output", "Acceptance test"],
+            "reward_usd": 10,
+        })
+        self.assertEqual(result, "GOOD")
         self.assertTrue(reasons)
 
     def test_bounty_eligibility_rejects_low_reward(self):
