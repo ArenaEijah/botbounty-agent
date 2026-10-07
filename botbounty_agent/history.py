@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import hashlib
 import json
 from pathlib import Path
 
@@ -7,7 +8,7 @@ from pathlib import Path
 class BountyHistory:
     def __init__(self, path: str = ".agent_state/history.json"):
         self.path = Path(path)
-        self.seen: set[str] = set()
+        self.records: dict[str, str] = {}
         self._load()
 
     def _load(self) -> None:
@@ -16,21 +17,50 @@ class BountyHistory:
         except (FileNotFoundError, OSError, ValueError):
             return
 
-        if isinstance(data, list):
-            self.seen = {str(item) for item in data if str(item).strip()}
+        if isinstance(data, dict):
+            self.records = {str(k): str(v) for k, v in data.items()}
+        elif isinstance(data, list):
+            # Backward compatibility with the previous ID-only format.
+            self.records = {str(item): "" for item in data if str(item).strip()}
 
     def contains(self, bounty_id) -> bool:
+        return bounty_id is not None and str(bounty_id) in self.records
+
+    def fingerprint(self, bounty: dict) -> str:
+        relevant = {
+            key: bounty.get(key)
+            for key in (
+                "title",
+                "description",
+                "reward_usd",
+                "bounty_usd",
+                "amount_usd",
+                "reward",
+                "status",
+                "deadline",
+                "expires_at",
+                "requirements",
+            )
+            if key in bounty
+        }
+        raw = json.dumps(relevant, sort_keys=True, default=str)
+        return hashlib.sha256(raw.encode("utf-8")).hexdigest()
+
+    def changed(self, bounty_id, bounty: dict) -> bool:
         if bounty_id is None:
             return False
-        return str(bounty_id) in self.seen
+        key = str(bounty_id)
+        if key not in self.records:
+            return False
+        return self.records[key] != self.fingerprint(bounty)
 
-    def mark_seen(self, bounty_id) -> None:
+    def mark_seen(self, bounty_id, bounty: dict) -> None:
         if bounty_id is not None and str(bounty_id).strip():
-            self.seen.add(str(bounty_id))
+            self.records[str(bounty_id)] = self.fingerprint(bounty)
 
     def save(self) -> None:
         self.path.parent.mkdir(parents=True, exist_ok=True)
         self.path.write_text(
-            json.dumps(sorted(self.seen), indent=2),
+            json.dumps(self.records, indent=2, sort_keys=True),
             encoding="utf-8",
         )
