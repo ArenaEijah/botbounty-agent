@@ -157,6 +157,34 @@ def requirements_completeness(bounty: dict[str, Any]) -> tuple[str, list[str]]:
         return "REVIEW", reasons
     return "READY", ["requirements contain concrete implementation signals"]
 
+def clarity_adjustment(bounty: dict[str, Any]) -> tuple[float, list[str]]:
+    """Adjust priority using concrete task signals without performing any external action."""
+    title = str(bounty.get("title") or bounty.get("name") or "").strip()
+    description = str(bounty.get("description") or "").strip()
+    requirements = bounty.get("requirements")
+    score = 0.0
+    reasons: list[str] = []
+
+    if title:
+        score += 2
+        reasons.append("clear title")
+    if len(description) >= 120:
+        score += 4
+        reasons.append("detailed description")
+    elif len(description) < 40:
+        score -= 5
+        reasons.append("vague description")
+
+    if requirements:
+        score += 4
+        reasons.append("explicit requirements")
+    else:
+        score -= 4
+        reasons.append("missing requirements")
+
+    return score, reasons
+
+
 def solution_readiness(bounty: dict[str, Any]) -> tuple[str, list[str]]:
     """Combine feasibility and requirement checks into one safe draft gate."""
     feasibility, feasibility_reasons = feasibility_check(bounty)
@@ -183,6 +211,9 @@ def opportunity_priority(bounty: dict[str, Any]) -> tuple[float, list[str]]:
         reasons.append("changed opportunity")
 
     reward = _reward(bounty)
+    clarity_score, clarity_reasons = clarity_adjustment(bounty)
+    priority += clarity_score
+    reasons.extend(clarity_reasons)
     efficiency, effort_label = estimated_efficiency(bounty)
     bounty["_agent_efficiency"] = efficiency
     bounty["_agent_effort"] = effort_label
