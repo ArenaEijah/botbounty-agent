@@ -1,3 +1,9 @@
+import unittest
+
+from botbounty_agent.scoring import feasibility_check
+
+
+class FeasibilityTests(unittest.TestCase):
     def test_feasibility_accepts_supported_task(self):
         result, reasons = feasibility_check({"title": "Python API automation script", "reward_usd": 20})
         self.assertEqual(result, "FEASIBLE")
@@ -13,5 +19,4 @@
 
 
 if __name__ == "__main__":
-    import unittest
     unittest.main()
