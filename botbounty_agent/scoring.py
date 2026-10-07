@@ -133,6 +133,30 @@ def feasibility_check(bounty: dict[str, Any]) -> tuple[str, list[str]]:
     return "REVIEW", ["insufficient task signals to confirm capability"]
 
 
+
+def requirements_completeness(bounty: dict[str, Any]) -> tuple[str, list[str]]:
+    """Assess whether a bounty has enough concrete information for a solution draft."""
+    title = str(bounty.get("title") or bounty.get("name") or "").strip()
+    description = str(bounty.get("description") or "").strip()
+    requirements = bounty.get("requirements")
+    combined = " ".join(_text(bounty).split())
+    reasons: list[str] = []
+
+    if not title:
+        reasons.append("missing task title")
+    if len(description) < 40:
+        reasons.append("description is too short")
+    if not requirements:
+        reasons.append("explicit requirements are missing")
+
+    concrete_signals = ("input", "output", "acceptance", "expected", "must", "return", "endpoint", "file", "test")
+    if not any(signal in combined for signal in concrete_signals):
+        reasons.append("no concrete acceptance or interface signal detected")
+
+    if reasons:
+        return "REVIEW", reasons
+    return "READY", ["requirements contain concrete implementation signals"]
+
 def opportunity_priority(bounty: dict[str, Any]) -> tuple[float, list[str]]:
     """Add safe, read-only signals to the base score."""
     priority = float(bounty.get("_agent_score", 0))
