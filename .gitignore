@@ -6,3 +6,7 @@ __pycache__/
 !.env.example
 .pytest_cache/
 .DS_Store
+
+.agent_state/
+.agent_reports/
+.agent_drafts/
