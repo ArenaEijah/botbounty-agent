@@ -25,13 +25,13 @@ def write_scan_report(
         "",
         "Feasibility is evaluated read-only from the available task text and requirements.",
         "",
-        "| # | Title | Reward | Efficiency | Score | Priority | Feasibility | Status |",
-        "|---:|---|---:|---:|---:|---:|---|---|",
+        "| # | Title | Reward | Efficiency | Score | Priority | Feasibility | Requirements | Status |",
+        "|---:|---|---:|---:|---:|---:|---|---|---|",
     ]
 
     selected = interesting if interesting is not None else ranked
     if not selected:
-        lines.append("| No opportunities currently meet the priority threshold. | | | | | |")
+        lines.append("| No opportunities currently meet the priority threshold. | | | | | | | |")
     for index, bounty in enumerate(selected[:10], start=1):
         title = str(
             bounty.get("title")
@@ -54,7 +54,8 @@ def write_scan_report(
             f"{bounty.get('_agent_efficiency', 0)} | "
             f"{bounty.get('_agent_score', 0)} | "
             f"{bounty.get('_agent_priority', bounty.get('_agent_score', 0))} | "
-            f"{bounty.get('_agent_feasibility', 'REVIEW')} | {status} |"
+            f"{bounty.get('_agent_feasibility', 'REVIEW')} | "
+            f"{bounty.get('_agent_requirements_status', 'REVIEW')} | {status} |"
         )
 
     lines.extend([
