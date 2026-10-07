@@ -11,3 +11,4 @@ class Config:
     )
     dry_run: bool = os.getenv("AGENT_DRY_RUN", "true").lower() not in {"0", "false", "no"}
     min_bounty_usd: float = float(os.getenv("MIN_BOUNTY_USD", "1"))
+    min_priority: float = float(os.getenv("MIN_PRIORITY", "60"))
